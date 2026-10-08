@@ -6,12 +6,39 @@ const pool = require('../config/db');
 router.get('/', async(req,res)=>{
    
     try{
-        const limit = parseInt(req.query.limit) || 20;
-        const offset = parseInt(req.query.offset) || 0;
-    
         //query params: city, zipcode, minPrice, maxPrice, beds, baths
         const {city,zipcode,minPrice,maxPrice,beds,baths}=req.query;
+         // validate limit (default 20)
+        let limit = 20;
+        if (req.query.limit !== undefined) {
+            const n = Number(req.query.limit);
+            if (!Number.isInteger(n) || n < 1 || n > 100) {
+                return res.status(400).json({ error: 'limit must be a whole number from 1 to 100' });
+            }
+            limit = n;
+        }
 
+    
+        let offset = 0;
+        if (req.query.offset !== undefined) {
+            const n = Number(req.query.offset);
+            if (!Number.isInteger(n) || n < 0) {
+                return res.status(400).json({ error: 'offset must be a whole number, 0 or more' });
+            }
+            offset = n;
+        }
+    
+        // each filter, if sent, must be a number 0 or more
+        for (const [name, value] of Object.entries({ minPrice, maxPrice, beds, baths })) {
+            if (value !== undefined && (value === '' || isNaN(Number(value)) || Number(value) < 0)) {
+                return res.status(400).json({ error: `${name} must be a number, 0 or more` });
+            }
+        }
+
+        // min can't exceed max
+        if (minPrice !== undefined && maxPrice !== undefined && Number(minPrice) > Number(maxPrice)) {
+            return res.status(400).json({ error: 'minPrice cannot be greater than maxPrice' });
+        }
         const conditions = [];
         const params = [];
 
@@ -60,7 +87,7 @@ router.get('/', async(req,res)=>{
             res.json({ total, limit, offset, "results": rows });
         }catch(err){
             console.error(err);
-            res.status(500).json({err: "Server error"});
+            res.status(500).json({error: "Server error"});
         }   
 });
 
