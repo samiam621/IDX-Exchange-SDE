@@ -10,4 +10,4 @@ app.use('/api', healthRoute) //tells Express "stick /api in front of every route
 app.listen(5000, () => console.log('Server running on port 5000'));
 
 //properties route
-app.use('/api', propertiesRoute)
+app.use('/api/properties', propertiesRoute)
