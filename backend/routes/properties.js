@@ -3,6 +3,15 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 
+function parsePropertyId(value) {
+    if (!/^\d+$/.test(value)) {
+        return null;
+    }
+
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 router.get('/', async(req,res)=>{
    
     try{
@@ -73,6 +82,7 @@ router.get('/', async(req,res)=>{
         )
 
         //id  | L_ListingID | L_DisplayId | L_Address  | L_Keyword2 | LM_Dec_3 | LM_Int2_3 | L_SystemPrice |
+        //pulling the rows
         const [rows] = await pool.query(
             `SELECT id, L_Address, L_City, L_Zip, L_SystemPrice, L_Keyword2, LM_Dec_3
             FROM rets_property
@@ -89,6 +99,66 @@ router.get('/', async(req,res)=>{
             console.error(err);
             res.status(500).json({error: "Server error"});
         }   
+});
+
+router.get('/:id/openhouses', async (req, res) => {
+    const id = parsePropertyId(req.params.id);
+    if (id === null) {
+        return res.status(400).json({ error: 'Property ID must be a positive whole number within the supported range' });
+    }
+
+    try {
+        const [properties] = await pool.query(
+            'SELECT L_ListingID FROM rets_property WHERE id = ? LIMIT 1',
+            [id]
+        );
+
+        if (properties.length === 0) {
+            return res.status(404).json({ error: `Property with ID ${id} was not found` });
+        }
+
+        const [openhouses] = await pool.query(
+            `SELECT *
+            FROM rets_openhouse
+            WHERE L_ListingID = ?
+            ORDER BY
+                CASE WHEN JSON_VALID(all_data)
+                    THEN JSON_UNQUOTE(JSON_EXTRACT(all_data, '$.OH_Date'))
+                END,
+                CASE WHEN JSON_VALID(all_data)
+                    THEN JSON_UNQUOTE(JSON_EXTRACT(all_data, '$.OH_StartTime'))
+                END`,
+            [properties[0].L_ListingID]
+        );
+
+        res.json(openhouses);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Unable to retrieve open houses for this property' });
+    }
+});
+
+router.get('/:id', async (req, res) => {
+    const id = parsePropertyId(req.params.id);
+    if (id === null) {
+        return res.status(400).json({ error: 'Property ID must be a positive whole number within the supported range' });
+    }
+
+    try {
+        const [properties] = await pool.query(
+            'SELECT * FROM rets_property WHERE id = ? LIMIT 1',
+            [id]
+        );
+
+        if (properties.length === 0) {
+            return res.status(404).json({ error: `Property with ID ${id} was not found` });
+        }
+
+        res.json(properties[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Unable to retrieve this property' });
+    }
 });
 
 module.exports = router;
