@@ -84,7 +84,7 @@ router.get('/', async(req,res)=>{
         //id  | L_ListingID | L_DisplayId | L_Address  | L_Keyword2 | LM_Dec_3 | LM_Int2_3 | L_SystemPrice |
         //pulling the rows
         const [rows] = await pool.query(
-            `SELECT id, L_Address, L_City, L_Zip, L_SystemPrice, L_Keyword2, LM_Dec_3
+            `SELECT id, L_Address, L_City, L_State, L_Zip, L_SystemPrice, L_Keyword2, LM_Dec_3, LM_Int2_3, L_Photos
             FROM rets_property
             ${where}
             ORDER BY id
