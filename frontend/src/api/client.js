@@ -17,8 +17,10 @@ async function getJson(url) {
 }
 
 // Fetch a list of properties, e.g. fetchProperties({ city: 'Irvine', limit: 20 })
+// Empty values ('', null, undefined) are dropped so the backend never sees ?city=&beds=
 export function fetchProperties(params = {}) {
-    return getJson(`/api/properties?${new URLSearchParams(params)}`);
+    const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v != null));
+    return getJson(`/api/properties?${new URLSearchParams(clean)}`);
 }
 
 // Fetch one property by id

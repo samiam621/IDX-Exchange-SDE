@@ -16,4 +16,7 @@
 .card-body { padding: 12px; }
 .card-body p { margin: 4px 0; }
 .status { text-align: center; padding: 40px; }
-.error { color: #c00; }
+.error { color: #c00; }.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
+.filters label { display: flex; flex-direction: column; font-size: 14px; gap: 4px; }
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin: 24px 0; }
+.pagination [aria-current="page"] { font-weight: bold; background: #333; color: #fff; }
