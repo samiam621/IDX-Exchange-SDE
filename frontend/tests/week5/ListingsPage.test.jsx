@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // Req 24 + 26: grid of cards, property count, loading and error states
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen } from '@testing-library/react';
 import ListingsPage from '../../src/pages/ListingsPage';
 
@@ -18,13 +19,13 @@ const results = [
 describe('ListingsPage', () => {
   it('shows a loading message while data is fetching', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {}))); // never resolves
-    render(<ListingsPage />);
+    render(<MemoryRouter><ListingsPage /></MemoryRouter>);
     screen.getByText('Loading properties...');
   });
 
   it('renders one card per property and the "Showing X-Y of Z" count', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ total: 487, results })));
-    render(<ListingsPage />);
+    render(<MemoryRouter><ListingsPage /></MemoryRouter>);
     await screen.findByText('Showing 1-2 of 487 properties');
     screen.getByText('1 Fake Ave');
     screen.getByText('2 Fake Ave');
@@ -33,13 +34,13 @@ describe('ListingsPage', () => {
 
   it('shows an error message when the backend is unreachable', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-    render(<ListingsPage />);
+    render(<MemoryRouter><ListingsPage /></MemoryRouter>);
     await screen.findByText(/Error: Cannot reach the server/);
   });
 
   it('shows the server error message on an HTTP error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: 'Server error' }, { status: 500 })));
-    render(<ListingsPage />);
+    render(<MemoryRouter><ListingsPage /></MemoryRouter>);
     await screen.findByText('Error: Server error');
   });
 });

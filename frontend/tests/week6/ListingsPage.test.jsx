@@ -2,6 +2,7 @@
 // Req 28/29 + debug challenge: filters drive the list, Clear reloads, no stale flash
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import ListingsPage from '../../src/pages/ListingsPage';
 
 afterEach(() => {
@@ -20,7 +21,7 @@ const search = (city) => {
 describe('ListingsPage filters', () => {
   it('Search refetches with the filters (empty ones left out) and shows new results', async () => {
     vi.stubGlobal('fetch', vi.fn((url) => Promise.resolve(url.includes('Irvine') ? page('Irvine home') : page('Any home'))));
-    render(<ListingsPage />);
+    render(<MemoryRouter><ListingsPage /></MemoryRouter>);
     await screen.findByText('Any home');
     search('Irvine');
     await screen.findByText('Irvine home');
@@ -29,13 +30,13 @@ describe('ListingsPage filters', () => {
 
   it('shows a helpful message when nothing matches', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(page()));
-    render(<ListingsPage />);
+    render(<MemoryRouter><ListingsPage /></MemoryRouter>);
     await screen.findByText(/No properties found/);
   });
 
   it('Clear Filters reloads all properties', async () => {
     vi.stubGlobal('fetch', vi.fn((url) => Promise.resolve(url.includes('Irvine') ? page('Irvine home') : page('Any home'))));
-    render(<ListingsPage />);
+    render(<MemoryRouter><ListingsPage /></MemoryRouter>);
     search('Irvine');
     await screen.findByText('Irvine home');
     fireEvent.click(screen.getByText('Clear Filters'));
@@ -50,7 +51,7 @@ describe('ListingsPage filters', () => {
       if (url.includes('Tustin')) return Promise.resolve(page('Tustin home'));
       return Promise.resolve(page('Any home'));
     }));
-    render(<ListingsPage />);
+    render(<MemoryRouter><ListingsPage /></MemoryRouter>);
     search('Irvine');                                  // slow request
     fireEvent.click(screen.getByText('Clear Filters'));
     search('Tustin');

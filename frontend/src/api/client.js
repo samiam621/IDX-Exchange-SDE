@@ -27,3 +27,8 @@ export function fetchProperties(params = {}) {
 export function fetchPropertyDetail(id) {
     return getJson(`/api/properties/${encodeURIComponent(id)}`);
 }
+
+// Fetch the open houses for one property
+export function fetchOpenHouses(id) {
+    return getJson(`/api/properties/${encodeURIComponent(id)}/openhouses`);
+}

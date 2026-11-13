@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  envPrefix: ['VITE_', 'REACT_APP_'], // Vite only exposes VITE_ by default
   server: {
   port: 3000,
   proxy:{
