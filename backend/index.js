@@ -6,12 +6,14 @@ const propertiesRoute = require('./routes/properties')
 
 const app = express();
 
+// request log: "<time> GET /api/properties?city=Irvine 200 12.3ms"
+// performance.now() gives sub-millisecond precision (Date.now() rounds to whole ms)
 app.use((req, res, next) => {
-    const startedAt = Date.now();
+    const startedAt = performance.now();
     const timestamp = new Date().toISOString();
 
     res.on('finish', () => {
-        const duration = Date.now() - startedAt;
+        const duration = (performance.now() - startedAt).toFixed(1);
         console.log(`${timestamp} ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
     });
 

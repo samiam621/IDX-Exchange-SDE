@@ -4,17 +4,33 @@ import PropertyCard from '../components/PropertyCard';
 import PropertyFilters from '../components/PropertyFilters';
 import Pagination from '../components/Pagination';
 
+// Sort dropdown options: value is "column:order" using the backend's real column names
+const SORT_OPTIONS = [
+  ['', 'Default'],
+  ['L_SystemPrice:asc', 'Price: low to high'],
+  ['L_SystemPrice:desc', 'Price: high to low'],
+  ['L_ListingDate:desc', 'Newest listed'],
+  ['L_ListingDate:asc', 'Oldest listed'],
+  ['LM_Int2_3:desc', 'Sqft: largest'],
+  ['LM_Int2_3:asc', 'Sqft: smallest'],
+  ['L_Keyword2:desc', 'Beds: most'],
+  ['L_Keyword2:asc', 'Beds: fewest'],
+];
+
 // Filter form + card grid + pagination
 export default function ListingsPage() {
   // active filters and current page (20 listings per page)
   const [filters, setFilters] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [sort, setSort] = useState(''); // "" = default order, else "column:order"
   const [itemsPerPage] = useState(20);
   // result of the latest finished request, tagged with the query it answered
   const [result, setResult] = useState({ key: null, data: null, error: null });
 
   // one string per distinct query; loading = no answer yet for the CURRENT query
-  const key = JSON.stringify({ ...filters, limit: itemsPerPage, offset: (currentPage - 1) * itemsPerPage });
+  // split "L_SystemPrice:desc" into sortBy + sortOrder for the API (default sends neither)
+  const [sortBy, sortOrder] = sort.split(':');
+  const key = JSON.stringify({ ...filters, sortBy, sortOrder, limit: itemsPerPage, offset: (currentPage - 1) * itemsPerPage });
   const loading = result.key !== key;
   const { data, error } = result;
 
@@ -28,8 +44,11 @@ export default function ListingsPage() {
     return () => { stale = true; };
   }, [key]);
 
-  // new filters (or clearing them) always start at page 1
-  const search = (f) => { setFilters(f); setCurrentPage(1); };
+  // new filters (or clearing them) always start at page 1 with the default sort
+  const search = (f) => { setFilters(f); setSort(''); setCurrentPage(1); };
+
+  // a new sort order starts at page 1; changing pages keeps the sort
+  const changeSort = (e) => { setSort(e.target.value); setCurrentPage(1); };
 
   // go to another page (filters stay the same) and jump back to the top
   const changePage = (page) => {
@@ -63,6 +82,12 @@ export default function ListingsPage() {
   return (
     <div className="page">
       <PropertyFilters onSearch={search} onClear={() => search({})} />
+      {/* sort dropdown: controlled by `sort` state so it resets when filters change */}
+      <label className="sort">Sort by{' '}
+        <select value={sort} onChange={changeSort}>
+          {SORT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
       {content}
     </div>
   );

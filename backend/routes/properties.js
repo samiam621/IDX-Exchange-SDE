@@ -3,6 +3,11 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 
+// sortBy whitelist: real rets_property column names (NOT RESO names like ListPrice).
+// Only these strings can ever reach the ORDER BY, so user input never becomes SQL.
+const SORT_COLUMNS = ['L_SystemPrice', 'L_ListingDate', 'LM_Int2_3', 'L_Keyword2']; // price, date listed, sqft, beds
+const SORT_ORDERS = ['asc', 'desc'];
+
 function parsePropertyId(value) {
     if (!/^\d+$/.test(value)) {
         return null;
@@ -43,6 +48,19 @@ router.get('/', async(req,res)=>{
                 return res.status(400).json({ error: `${name} must be a number, 0 or more` });
             }
         }
+
+        // sorting: sortBy must be a whitelisted column, sortOrder asc|desc (default asc)
+        const { sortBy } = req.query;
+        const sortOrder = String(req.query.sortOrder ?? 'asc').toLowerCase();
+        if (sortBy !== undefined && !SORT_COLUMNS.includes(sortBy)) {
+            return res.status(400).json({ error: `sortBy must be one of: ${SORT_COLUMNS.join(', ')}` });
+        }
+        if (!SORT_ORDERS.includes(sortOrder)) {
+            return res.status(400).json({ error: 'sortOrder must be asc or desc' });
+        }
+        // id as a tie-breaker keeps pages stable when many rows share a price/beds value
+        // build the ORDER BY: chosen column + direction, or id when no sort was picked
+        const orderBy = sortBy ? `${sortBy} ${sortOrder.toUpperCase()}, id` : 'id';
 
         // min can't exceed max
         if (minPrice !== undefined && maxPrice !== undefined && Number(minPrice) > Number(maxPrice)) {
@@ -87,7 +105,7 @@ router.get('/', async(req,res)=>{
             `SELECT id, L_Address, L_City, L_State, L_Zip, L_SystemPrice, L_Keyword2, LM_Dec_3, LM_Int2_3, L_Photos
             FROM rets_property
             ${where}
-            ORDER BY id
+            ORDER BY ${orderBy}
             LIMIT ? OFFSET ?`,
             [...params, limit, offset]
         );
